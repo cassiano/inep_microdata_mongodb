@@ -32,23 +32,30 @@ class ScoreStats(EmbeddedDocument):
 class School(Document):
     code  = StringField(max_length=8, required=True)
     name  = StringField(max_length=255, required=True)
-    city  = ReferenceField('City')
     stats = EmbeddedDocumentField(ScoreStats)
 
     meta = {
         'indexes': ['code']
     }
 
+    def city(self):
+        return City.objects(schools=self.id).first()
+
 class City(Document):
     code    = StringField(max_length=7, required=True)
     name    = StringField(max_length=255, required=True)
-    state   = ReferenceField('State')
     schools = ListField(ReferenceField(School))
     stats   = EmbeddedDocumentField(ScoreStats)
 
     meta = {
         'indexes': ['code']
     }
+
+    def state(self):
+        return State.objects(cities=self.id).first()
+        
+    def full_name(self):
+        return name + "-" + self.state().abbreviation
 
 class State(Document):
     abbreviation = StringField(max_length=2, required=True)
@@ -100,14 +107,14 @@ if __name__ == '__main__':
 
             # If state non-existent or distinct from current state, find or create it.
             if not state or state_abbreviation != state.abbreviation:
-                state = State.objects(abbreviation=state_abbreviation).first() or State(abbreviation=state_abbreviation).save()
+                state = State.objects(abbreviation=state_abbreviation).first() or State(abbreviation=state_abbreviation)
             
             # If city non-existent or distinct from current city, find or create it.
             if not city or city_code != city.code:
                 # city = City.objects(code=city_code).first()
                 city = find(lambda c: c.code == city_code, state.cities)
                 if not city: 
-                    city = City(code=city_code, name=city_name, state=state).save()
+                    city = City(code=city_code, name=city_name)
                     state.cities.append(city)
 
             # If school non-existent or distinct from current school, find or create it.
@@ -115,7 +122,7 @@ if __name__ == '__main__':
                 # school = School.objects(code=school_code).first()
                 school = find(lambda s: s.code == school_code, city.schools)
                 if not school: 
-                    school = School(code=school_code, name='Escola ID=%s da cidade de %s-%s' % (school_code, city_name, state_abbreviation), city=city).save()
+                    school = School(code=school_code, name='Escola ID=%s da cidade de %s-%s' % (school_code, city_name, state_abbreviation))
                     city.schools.append(school)
 
             # if not city.stats: 
