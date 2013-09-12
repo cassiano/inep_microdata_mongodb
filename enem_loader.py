@@ -10,16 +10,14 @@ def find(f, seq):
     if f(item): 
       return item
 
-class ScoreStatsDetail(EmbeddedDocument):
-    range = IntField(min_value=1, max_value=10)
-    count = IntField(min_value=0)
-
 class ScoreStats(EmbeddedDocument):
-    count = IntField(min_value=0)
-    cn    = ListField(EmbeddedDocumentField(ScoreStatsDetail))
-    ch    = ListField(EmbeddedDocumentField(ScoreStatsDetail))
-    lc    = ListField(EmbeddedDocumentField(ScoreStatsDetail))
-    mt    = ListField(EmbeddedDocumentField(ScoreStatsDetail))
+    cn = ListField(IntField(min_value=0))
+    ch = ListField(IntField(min_value=0))
+    lc = ListField(IntField(min_value=0))
+    mt = ListField(IntField(min_value=0))
+    
+    def count(self):
+        1000
     
     def summary(self):
         return [{ 
@@ -32,39 +30,39 @@ class ScoreStats(EmbeddedDocument):
 class School(Document):
     code  = StringField(max_length=8, required=True)
     name  = StringField(max_length=255, required=True)
+    city  = ReferenceField('City')
     stats = EmbeddedDocumentField(ScoreStats)
 
     meta = {
         'indexes': ['code']
     }
 
-    def city(self):
-        return City.objects(schools=self.id).first()
-
 class City(Document):
     code    = StringField(max_length=7, required=True)
     name    = StringField(max_length=255, required=True)
-    schools = ListField(ReferenceField(School))
+    state   = ReferenceField('State')
     stats   = EmbeddedDocumentField(ScoreStats)
 
     meta = {
         'indexes': ['code']
     }
 
-    def state(self):
-        return State.objects(cities=self.id).first()
-        
-    def full_name(self):
-        return name + "-" + self.state().abbreviation
+    def schools(self):
+        return School.objects(city=self.id)
 
+    def full_name(self):
+        return name + "-" + self.state.abbreviation
+        
 class State(Document):
     abbreviation = StringField(max_length=2, required=True)
-    cities       = ListField(ReferenceField(City))
     stats        = EmbeddedDocumentField(ScoreStats)
 
     meta = {
         'indexes': ['abbreviation']
     }
+
+    def cities(self):
+        return City.objects(state=self.id)
 
 if __name__ == '__main__':
     School.drop_collection()
@@ -79,7 +77,7 @@ if __name__ == '__main__':
             i += 1
             print(i)
         
-            if i > 2000: break
+            if i > 10: break
 
             present_in_nature_sciences_exam     = line[532:(532+1)] == '1'
             present_in_human_sciences_exam      = line[533:(533+1)] == '1'
@@ -107,53 +105,30 @@ if __name__ == '__main__':
 
             # If state non-existent or distinct from current state, find or create it.
             if not state or state_abbreviation != state.abbreviation:
-                state = State.objects(abbreviation=state_abbreviation).first() or State(abbreviation=state_abbreviation)
+                state = State.objects(abbreviation=state_abbreviation).first() or State(abbreviation=state_abbreviation).save()
             
             # If city non-existent or distinct from current city, find or create it.
             if not city or city_code != city.code:
-                # city = City.objects(code=city_code).first()
-                city = find(lambda c: c.code == city_code, state.cities)
+                city = City.objects(code=city_code).first()
                 if not city: 
-                    city = City(code=city_code, name=city_name)
-                    state.cities.append(city)
+                    city = City(code=city_code, name=city_name, state=state).save()
 
             # If school non-existent or distinct from current school, find or create it.
             if not school or school_code != school.code:
-                # school = School.objects(code=school_code).first()
-                school = find(lambda s: s.code == school_code, city.schools)
+                school = School.objects(code=school_code).first()
                 if not school: 
-                    school = School(code=school_code, name='Escola ID=%s da cidade de %s-%s' % (school_code, city_name, state_abbreviation))
-                    city.schools.append(school)
+                    empty_ranges = [0] * 10
 
-            # if not city.stats: 
-            #     city.stats = ScoreStats(count=0)
-            # 
-            # if math_range:
-            #     stats_detail = find(lambda sd: sd.range == math_range, city.stats.mt)
-            # 
-            #     if not stats_detail:
-            #         stats_detail = ScoreStatsDetail(range=math_range, count=1)
-            #         city.stats.mt.append(stats_detail)
-            #     else:
-            #         stats_detail.count += 1
-            #     
-            #     city.stats.count += 1
+                    school = School(
+                        code=school_code, 
+                        name='Escola ID=%s da cidade de %s-%s' % (school_code, city_name, state_abbreviation), 
+                        city=city, 
+                        stats=ScoreStats(cn=empty_ranges, ch=empty_ranges, lc=empty_ranges, mt=empty_ranges)
+                    )
 
-            if not school.stats: 
-                school.stats = ScoreStats(count=0)
+            if nature_sciences_range:     school.stats.cn[nature_sciences_range     - 1] += 1
+            if human_sciences_range:      school.stats.ch[human_sciences_range      - 1] += 1
+            if languages_and_codes_range: school.stats.lc[languages_and_codes_range - 1] += 1
+            if math_range:                school.stats.mt[math_range                - 1] += 1
 
-            if math_range:
-                stats_detail = find(lambda sd: sd.range == math_range, school.stats.mt)
-
-                if not stats_detail:
-                    stats_detail = ScoreStatsDetail(range=math_range, count=1)
-                    school.stats.mt.append(stats_detail)
-                else:
-                    stats_detail.count += 1
-                
-                school.stats.count += 1
-
-            # Save all objects.
             school.save()
-            city.save()
-            state.save()
