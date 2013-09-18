@@ -18,19 +18,14 @@ if __name__ == '__main__':
             for k, school in enumerate(city.schools()):
                 print(' ' * 6 + '% 4d. ' % (k + 1) + school.code)
                 
-                for knowledge_area in ScoreStatistics.KNOWLEDGE_AREAS:
+                for knowledge_area in KNOWLEDGE_AREAS:
                     for m in range(len(ScoreStatistics.EMPTY_LIST)):
                         city.stats.values[knowledge_area][m] += school.stats.values[knowledge_area][m]
 
             city.save()
 
-            for knowledge_area in ScoreStatistics.KNOWLEDGE_AREAS:
+            for knowledge_area in KNOWLEDGE_AREAS:
                 for m in range(len(ScoreStatistics.EMPTY_LIST)):
                     state.stats.values[knowledge_area][m] = city.stats.values[knowledge_area][m]
-
-                # state.stats.values[knowledge_area] = map(
-                #     sum, 
-                #     zip(state.stats.values[knowledge_area], city.stats.values[knowledge_area])
-                # )
                 
         state.save()
