@@ -3,7 +3,7 @@
 from enem_loader import *
 
 if __name__ == '__main__':
-    connect('inep_scores')
+    connect('inep_scores4')
 
     for i, state in enumerate(State.all()):
         print('% 1d. ' % (i + 1) + state.abbreviation)

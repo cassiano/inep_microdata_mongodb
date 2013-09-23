@@ -7,23 +7,22 @@ KNOWLEDGE_AREAS = ['nc', 'hc', 'lc', 'mt']
 class ScoreStatistics(EmbeddedDocument):
     EMPTY_LIST = [0] * 10
     
-    values = DictField(ListField)
+    # Define a matrix of score counts per range and per knowledge area (ranges in columns and knowledge areas in rows).
+    score_counts = ListField(ListField(IntField(min_value=0)))
     
     @classmethod
     def create_empty(cls):
-        return cls(values={ ka: cls.EMPTY_LIST for ka in KNOWLEDGE_AREAS })
+        return cls(score_counts=[cls.EMPTY_LIST for _ in KNOWLEDGE_AREAS])
 
     def count(self):
-        knowledge_areas_values = [self.values[ka] for ka in ScoreStatistics.KNOWLEDGE_AREAS]
-
-        return reduce(sum, [value for values in knowledge_areas_values for value in values])
+        return reduce(sum, [reduce(sum, self.knowledge_area_row) for knowledge_area_row in self.score_counts])
     
     def percentages(self, knowledge_area):
-        data = self.values[knowledge_area]
+        knowledge_area_score_counts = self.score_counts[KNOWLEDGE_AREAS.index(knowledge_area)]
         
-        total = reduce(sum, data)
+        total_counts = reduce(sum, knowledge_area_score_counts)
         
-        return map(lambda value: value * 1.0 / count, data)
+        return map(lambda value: value * 1.0 / total_counts, knowledge_area_score_counts)
 
 class School(Document):
     code  = StringField(max_length=8, required=True, unique=True)
@@ -32,7 +31,8 @@ class School(Document):
     stats = EmbeddedDocumentField(ScoreStatistics)
 
     meta = {
-        'ordering': ['+name']
+        'ordering': ['+name'],
+        'indexes': ['city']
     }
 
     @classmethod
@@ -46,7 +46,8 @@ class City(Document):
     stats = EmbeddedDocumentField(ScoreStatistics)
 
     meta = {
-        'ordering': ['+name']
+        'ordering': ['+name'],
+        'indexes': ['state']
     }
 
     def schools(self):
@@ -97,7 +98,7 @@ def parse_line(line):
 if __name__ == '__main__':
     DATA_FILE = '/Users/cassiano/projects/python/inep_microdata/sql/data/enem_estado_sao_paulo.txt'
 
-    connect('inep_scores')
+    connect('inep_scores4')
 
     School.drop_collection()
     City.drop_collection()
@@ -108,14 +109,14 @@ if __name__ == '__main__':
 
         for i, line in enumerate(f):
             if i % 200 == 0: print(i)
-            # if i > 10: break
+            # if i > 2000: break
 
             row = parse_line(line)
             
             # print(row)
 
             # If state non-existent or distinct from current state, get or create it.
-            if not state or row['state']  != state.abbreviation:
+            if not state or row['state'] != state.abbreviation:
                 state, _ = State.objects.get_or_create(abbreviation=row['state'])
             
             # If city non-existent or distinct from current city, get or create it.
@@ -133,10 +134,10 @@ if __name__ == '__main__':
                     }
                 )
 
-            for knowledge_area in KNOWLEDGE_AREAS:
+            for i, knowledge_area in enumerate(KNOWLEDGE_AREAS):
                 range_value = row['ranges'][knowledge_area]
                 
                 if range_value: 
-                    school.stats.values[knowledge_area][range_value - 1] += 1
+                    school.stats.score_counts[i][range_value - 1] += 1
 
             school.save()
