@@ -1,42 +1,20 @@
 # coding=UTF-8
 
-# To span multiple processes: find data_269043/* | xargs -I fn ./run.command python `pwd`/enem_loader.py inep_scores `pwd`/fn
+# To span multiple processes: find data_269043/* | xargs -I fn ./run.command time python `pwd`/enem_loader.py inep_scores `pwd`/fn
 
 from mongoengine import *
-import time
 
 KNOWLEDGE_AREAS = ['nc', 'hc', 'lc', 'mt']
 
-class Retry(object):
-    default_exceptions = (Exception)
-    def __init__(self, tries, exceptions=None, delay=0):
-        """
-        Decorator for retrying function if exception occurs
-        
-        tries -- num tries
-        exceptions -- exceptions to catch
-        delay -- wait between retries
-        """
-        self.tries = tries
-        if exceptions is None:
-            exceptions = Retry.default_exceptions
-        self.exceptions = exceptions
-        self.delay = delay
+class DocumentHelpers(object):
+    @classmethod
+    def find(cls, **kwargs):
+        return cls.objects(**kwargs)
 
-    def __call__(self, f):
-        def fn(*args, **kwargs):
-            exception = None
-            for _ in range(self.tries):
-                try:
-                    return f(*args, **kwargs)
-                except self.exceptions, e:
-                    print "Retry, exception: "+str(e)
-                    time.sleep(self.delay)
-                    exception = e
-            # If no success after tries, raise last exception.
-            raise exception
-        return fn
-
+    @classmethod
+    def all(cls):
+        return cls.objects
+    
 class ScoreStatistics(EmbeddedDocument):
     EMPTY_LIST = [0] * 10
     
@@ -48,19 +26,23 @@ class ScoreStatistics(EmbeddedDocument):
         return cls(score_counts=[cls.EMPTY_LIST for _ in KNOWLEDGE_AREAS])
 
     def count(self):
-        return reduce(sum, [reduce(sum, self.knowledge_area_row) for knowledge_area_row in self.score_counts])
+        def add(a, b): return a + b
+
+        return reduce(add, [reduce(add, knowledge_area_row) for knowledge_area_row in self.score_counts])
     
     def percentages(self, knowledge_area):
+        def add(a, b): return a + b
+
         knowledge_area_score_counts = self.score_counts[KNOWLEDGE_AREAS.index(knowledge_area)]
         
-        total_counts = reduce(sum, knowledge_area_score_counts)
+        total_counts = reduce(add, knowledge_area_score_counts)
         
         return map(lambda value: value * 1.0 / total_counts, knowledge_area_score_counts)
 
-class School(Document):
+class School(Document, DocumentHelpers):
     code  = StringField(max_length=8, required=True, unique=True)
     name  = StringField(max_length=255, required=True)
-    city  = ReferenceField('City')
+    city  = ReferenceField('City', required=True)
     stats = EmbeddedDocumentField(ScoreStatistics)
 
     meta = {
@@ -68,14 +50,10 @@ class School(Document):
         'indexes': ['city']
     }
 
-    @classmethod
-    def all(cls):
-        return cls.objects
-    
-class City(Document):
+class City(Document, DocumentHelpers):
     code  = StringField(max_length=7, required=True, unique=True)
     name  = StringField(max_length=255, required=True)
-    state = ReferenceField('State')
+    state = ReferenceField('State', required=True)
     stats = EmbeddedDocumentField(ScoreStatistics)
 
     meta = {
@@ -93,7 +71,7 @@ class City(Document):
     def all(cls):
         return cls.objects.order_by('name')
         
-class State(Document):
+class State(Document, DocumentHelpers):
     abbreviation = StringField(max_length=2, required=True, unique=True)
     stats        = EmbeddedDocumentField(ScoreStatistics)
 
@@ -137,19 +115,20 @@ def parse_line(line):
     }
 
 if __name__ == '__main__':
-    @Retry(10, delay=1)
-    def get_or_create_state(abbreviation):
-        return State.objects.get_or_create(abbreviation=row['state'])[0]
+    import sys, mongoengine
+    from retry_decorator import *
 
-    @Retry(10, delay=1)
+    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
+    def get_or_create_state(abbreviation):
+        return State.objects.get_or_create(abbreviation=abbreviation)[0]
+
+    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
     def get_or_create_city(code, defaults):
         return City.objects.get_or_create(code=code, defaults=defaults)[0]
 
-    @Retry(10, delay=1)
+    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
     def get_or_create_school(code, defaults):
         return School.objects.get_or_create(code=code, defaults=defaults)[0]
-
-    import sys
 
     if len(sys.argv) < 3: 
         raise Exception('Usage: %s <db-name> <data-file> <drop-collections>' % sys.argv[0])
@@ -161,7 +140,8 @@ if __name__ == '__main__':
     connect(db_name)
 
     if drop_collections:
-        print('---- Dropping collections ----')
+        print('>>>>> Dropping collections...')
+        
         School.drop_collection()
         City.drop_collection()
         State.drop_collection()
@@ -170,28 +150,28 @@ if __name__ == '__main__':
         state = city = school = None
 
         for i, line in enumerate(f):
-            if i % 200 == 0: print(i)
-            # if i > 2000: break
+            if i % 1000 == 0: print(i)
+            # if i > 100: break
 
             row = parse_line(line)
             
             # print(row)
 
-            # If state non-existent or distinct from current state, get or create it.
+            # State non-existent or distinct from current state?
             if not state or row['state'] != state.abbreviation:
                 if row['state']:
                     state = get_or_create_state(row['state'])
                 else:
                     state = None
             
-            # If city non-existent or distinct from current city, get or create it.
+            # City non-existent or distinct from current city?
             if not city or row['city']['code'] != city.code:
                 if row['city']['code']:
                     city = get_or_create_city(row['city']['code'], { 'name': row['city']['name'], 'state': state })
                 else:
                     city = None
 
-            # If school non-existent or distinct from current school, get or create it.
+            # School non-existent or distinct from current school?
             if not school or row['school_code'] != school.code:
                 if row['school_code']:
                     school = get_or_create_school(
@@ -205,13 +185,9 @@ if __name__ == '__main__':
                 else:
                     school = None
                     
-                    # No school code provided! Get next student subscription.
-                    continue
-
-            for i, knowledge_area in enumerate(KNOWLEDGE_AREAS):
-                range_value = row['ranges'][knowledge_area]
+            if school:
+                for i, knowledge_area in enumerate(KNOWLEDGE_AREAS):
+                    range_value = row['ranges'][knowledge_area]
                 
-                if range_value: 
-                    school.stats.score_counts[i][range_value - 1] += 1
-
-            school.save()
+                    if range_value: 
+                        School.find(id=school.id).update_one(**{ 'inc__stats__score_counts__%d__%d' % (i, range_value - 1): 1 })
