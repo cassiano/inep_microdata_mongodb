@@ -1,5 +1,5 @@
 import unittest, sys
-from enem_loader_with_fork import *
+from enem_loader import *
 
 class TestMongoData(unittest.TestCase):
     def setUp(self):

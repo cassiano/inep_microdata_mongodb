@@ -89,7 +89,8 @@ if __name__ == '__main__':
     TOTAL_PRINTS = 40
 
     import sys, mongoengine, os
-    from retry_decorator import *
+    from multiprocessing import Process
+    from retry_decorator import Retry
 
     @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
     def get_or_create_state(abbreviation):
@@ -208,15 +209,13 @@ if __name__ == '__main__':
     children = []
     
     for i in range(len(data_files)):
-        pid = os.fork()
+        pid = Process(target=process_data_file, args=(data_files[i], i))
+        children.append(pid)
+        pid.start()
+        
+    print('>>>>> Waiting for child processes to complete...')
+    
+    for child in children:
+        child.join()
 
-        if pid:
-            # Parent.
-            children.append(pid)
-        else:
-            # Child.
-            process_data_file(data_files[i], i)
-            os._exit(0)
-
-    for i, child in enumerate(children):
-        os.waitpid(child, 0)
+    print('>>>>> Done!')
