@@ -23,20 +23,6 @@ class ScoreStatistics(EmbeddedDocument):
     def create_empty(cls):
         return cls(score_counts=[cls.EMPTY_LIST for _ in KNOWLEDGE_AREAS])
 
-    def count(self):
-        def add(a, b): return a + b
-
-        return reduce(add, [reduce(add, knowledge_area_row) for knowledge_area_row in self.score_counts])
-    
-    def percentages(self, knowledge_area):
-        def add(a, b): return a + b
-
-        knowledge_area_score_counts = self.score_counts[KNOWLEDGE_AREAS.index(knowledge_area)]
-        
-        total_counts = reduce(add, knowledge_area_score_counts)
-        
-        return map(lambda value: value * 1.0 / total_counts, knowledge_area_score_counts)
-
 class School(Document, DocumentHelpers):
     code  = StringField(max_length=8, required=True, unique=True)
     name  = StringField(max_length=255, required=True)
