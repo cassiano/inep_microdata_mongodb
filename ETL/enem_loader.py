@@ -16,8 +16,8 @@ class DocumentHelpers(object):
 class ScoreStatistics(EmbeddedDocument):
     EMPTY_LIST = [0] * 10
     
-    # Define a matrix of score counts per range and per knowledge area (ranges in columns and knowledge areas in rows).
-    score_counts = ListField(ListField(IntField(min_value=0)))
+    score_counts = ListField(ListField(IntField(min_value=0, required=True)))   # Matrix of score counts per range and per knowledge area 
+                                                                                # (ranges in columns and knowledge areas in rows).
     
     @classmethod
     def create_empty(cls):
@@ -27,7 +27,7 @@ class School(Document, DocumentHelpers):
     code  = StringField(max_length=8, required=True, unique=True)
     name  = StringField(max_length=255, required=True)
     city  = ReferenceField('City', required=True)
-    stats = EmbeddedDocumentField(ScoreStatistics)
+    stats = MapField(EmbeddedDocumentField(ScoreStatistics))
 
     meta = {
         'ordering': ['+name'],
@@ -38,7 +38,7 @@ class City(Document, DocumentHelpers):
     code  = StringField(max_length=7, required=True, unique=True)
     name  = StringField(max_length=255, required=True)
     state = ReferenceField('State', required=True)
-    stats = EmbeddedDocumentField(ScoreStatistics)
+    stats = MapField(EmbeddedDocumentField(ScoreStatistics))
 
     meta = {
         'ordering': ['+name'],
@@ -57,7 +57,7 @@ class City(Document, DocumentHelpers):
         
 class State(Document, DocumentHelpers):
     abbreviation = StringField(max_length=2, required=True, unique=True)
-    stats        = EmbeddedDocumentField(ScoreStatistics)
+    stats        = MapField(EmbeddedDocumentField(ScoreStatistics))
 
     meta = {
         'ordering': ['+abbreviation']
@@ -157,7 +157,7 @@ if __name__ == '__main__':
                             {
                                 'name': 'Escola ID=%s da cidade de %s-%s' % (row['school_code'], row['city']['name'], row['state']), 
                                 'city': city, 
-                                'stats': ScoreStatistics.create_empty()
+                                'stats': { str(row['year']): ScoreStatistics.create_empty() }
                             }
                         )
                     else:
@@ -168,9 +168,9 @@ if __name__ == '__main__':
                 
                     for i, knowledge_area in enumerate(KNOWLEDGE_AREAS):
                         range_value = row['ranges'][knowledge_area]
-    
+                    
                         if range_value: 
-                            kwargs.update({ 'inc__stats__score_counts__%d__%d' % (i, range_value - 1): 1 })
+                            kwargs.update({ 'inc__stats__%d__score_counts__%d__%d' % (row['year'], i, range_value - 1): 1 })
                 
                     if kwargs != {}:
                         School.find(id=school.id).update_one(**kwargs)
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     connect(db_name)
 
     if drop_collections:
-        print('>>>>> Dropping collections...')
+        print('>>> Dropping collections...')
         
         School.drop_collection()
         City.drop_collection()
@@ -199,9 +199,10 @@ if __name__ == '__main__':
         children.append(pid)
         pid.start()
         
-    print('>>>>> Waiting for child processes to complete...')
+    print('>>> Waiting for child processes to complete...')
     
-    for child in children:
+    for i, child in enumerate(children):
         child.join()
+        print('>>> Process %d (%s) joined.' % (i, child.pid))
 
-    print('>>>>> Done!')
+    print('>>> Done!')
