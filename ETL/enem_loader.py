@@ -16,8 +16,8 @@ class DocumentHelpers(object):
 class ScoreStatistics(EmbeddedDocument):
     EMPTY_LIST = [0] * 10
     
-    score_counts = ListField(ListField(IntField(min_value=0, required=True)))   # Matrix of score counts per range and per knowledge area 
-                                                                                # (ranges in columns and knowledge areas in rows).
+    # Matrix of score counts per range and per knowledge area (ranges in columns and knowledge areas in rows).
+    score_counts = ListField(ListField(IntField(min_value=0, required=True)))
     
     @classmethod
     def create_empty(cls):
@@ -27,7 +27,7 @@ class School(Document, DocumentHelpers):
     code  = StringField(max_length=8, required=True, unique=True)
     name  = StringField(max_length=255, required=True)
     city  = ReferenceField('City', required=True)
-    stats = MapField(EmbeddedDocumentField(ScoreStatistics))
+    stats = MapField(EmbeddedDocumentField(ScoreStatistics))        # Hash with year keys.
 
     meta = {
         'ordering': ['+name'],
