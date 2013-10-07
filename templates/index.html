@@ -1,0 +1,54 @@
+{% extends 'layout.html' %}
+
+{% block scripts %}
+  <script type='text/javascript' src='/static/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js'></script>
+  <script type='text/javascript' src='/static/javascripts/knockout-min.js'></script>
+  <script type='text/javascript' src='/static/javascripts/globalize.min.js'></script>
+  <script type='text/javascript' src='/static/javascripts/dx.chartjs.js'></script>
+
+  <script type='text/javascript' src='/static/javascripts/application.js'></script>
+{% endblock %}
+
+{% block body %}
+  <h1>Comparador de performance de escolas no Enem</h1>
+  
+  <br />
+  <div id='enem-subject-container' class='ui-widget'>
+    <label for='enem_subject'>Disciplina: </label>
+    <select id='enem_subject' data-bind='value: enemSubject, options: enemSubjects, optionsText: "name"'></select>
+  </div>
+
+  <div id='year-container'class='ui-widget'>
+    <label for='year'>Ano: </label>
+    <select id='year' data-bind='value: year'>
+      {% for y in years %}
+        <option value='{{ y }}'>{{ y }}</value>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div id='state-container' class='ui-widget'>
+    <label for='state'>Estado: </label>
+    <select id='state' data-bind='value: state'>
+      <option value=''>Selecione</value>
+      {% for s in states %}
+        <option value='{{ s.abbreviation }}'>{{ s.abbreviation }}</value>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div id='city-container' class='ui-widget' data-bind='fadeVisible: state, duration: 1000'>
+    <label for='city'>Cidade: </label>
+    <input id='city' size='40' placeholder='Digite o nome de uma cidade' data-bind="autocomplete: autocomplete.options.city" />
+  </div>
+
+  <div id='school-container' class='ui-widget' data-bind='fadeVisible: autocomplete.data.city.id, duration: 1000'>
+    <label for='school'>Escola: </label>
+    <input id='school' size='40' placeholder='Digite o nome de uma escola' data-bind="autocomplete: autocomplete.options.school" />
+  </div>
+
+  <br />
+  <div id='chart-container' data-bind='fadeVisible: autocomplete.data.school.id, duration: 1000'>
+    <div id='chart' style='max-width: 800px; height: 400px;' data-bind='dxChart: { chart.options }'></div>
+  </div>
+{% endblock %}

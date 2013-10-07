@@ -12,12 +12,12 @@ class TestMongoData(unittest.TestCase):
         pass
 
     def test_sao_paulo_city_exists(self):
-        city = City.objects(name='Sao Paulo').first()
+        city = City.find(name='Sao Paulo').first()
 
         self.assertIsNotNone(city)
 
     def test_sao_paulo_city_has_correct_stats(self):
-        city = City.objects(name='Sao Paulo').first()
+        city = City.find(name='Sao Paulo').first()
 
         self.assertEqual(city.stats['2011'].score_counts, [
             [0, 0, 922, 11784, 25980, 18297, 4895, 694, 31, 0], 
@@ -27,12 +27,12 @@ class TestMongoData(unittest.TestCase):
         ])
 
     def test_sp_state_exists(self):
-        state = State.objects(abbreviation='SP').first()
+        state = State.find(abbreviation='SP').first()
 
         self.assertIsNotNone(state)
 
     def test_sp_state_has_correct_stats(self):
-        state = State.objects(abbreviation='SP').first()
+        state = State.find(abbreviation='SP').first()
 
         self.assertEqual(state.stats['2011'].score_counts, [
             [0, 0, 3752, 50655, 114519, 77272, 16867, 1981, 66, 0], 
@@ -42,12 +42,12 @@ class TestMongoData(unittest.TestCase):
         ])
 
     def test_rj_state_exists(self):
-        state = State.objects(abbreviation='RJ').first()
+        state = State.find(abbreviation='RJ').first()
 
         self.assertIsNotNone(state)
 
     def test_rj_state_has_correct_stats(self):
-        state = State.objects(abbreviation='RJ').first()
+        state = State.find(abbreviation='RJ').first()
 
         self.assertEqual(state.stats['2011'].score_counts, [
             [0, 0, 1152, 15803, 37535, 29478, 8479, 931, 22, 0], 
@@ -57,12 +57,12 @@ class TestMongoData(unittest.TestCase):
         ])
 
     def test_dante_alighieri_school_exists(self):
-        school = School.objects(code='35103524').first()
+        school = School.find(code='35103524').first()
 
         self.assertIsNotNone(school)
 
     def test_dante_alighieri_school_has_correct_stats(self):
-        school = School.objects(code='35103524').first()
+        school = School.find(code='35103524').first()
 
         self.assertEqual(school.stats['2011'].score_counts, [
             [0, 0, 0, 2, 3, 47, 71, 9, 0, 0], 
