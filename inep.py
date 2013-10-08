@@ -12,7 +12,7 @@ DB_NAME = 'enem_5'
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config['DEBUG'] = True
-connect(DB_NAME, host=environ.get('MONGOHQ_URL', 'mongodb://localhost/' + DB_NAME))
+connect(None, host=environ.get('MONGOHQ_URL', 'mongodb://localhost/' + DB_NAME))
 
 # Constants.
 ENEM_KNOWLEDGE_AREAS = ['NAT', 'HUM', 'LAN', 'MAT']

@@ -155,7 +155,7 @@ if __name__ == '__main__':
                         school = get_or_create_school(
                             row['school_code'],
                             {
-                                'name': 'Escola ID=%s da cidade de %s-%s' % (row['school_code'], row['city']['name'], row['state']), 
+                                'name': 'ESCOLA %s (%s-%s)' % (row['school_code'], row['city']['name'], row['state']), 
                                 'city': city, 
                                 'stats': { str(row['year']): ScoreStatistics.create_empty() }
                             }
