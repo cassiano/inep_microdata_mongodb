@@ -3,6 +3,7 @@
 # Imports.
 from flask import Flask, request, render_template, jsonify
 from ETL.enem_loader import *
+from os import environ
 
 # Configuration.
 DB_NAME = 'enem_5'
@@ -11,7 +12,7 @@ DB_NAME = 'enem_5'
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config['DEBUG'] = True
-connect(DB_NAME)
+connect(DB_NAME, host=environ.get('MONGOHQ_URL', 'mongodb://localhost/' + DB_NAME))
 
 # Constants.
 ENEM_KNOWLEDGE_AREAS = ['NAT', 'HUM', 'LAN', 'MAT']
