@@ -10,6 +10,7 @@ DB_NAME = 'enem_5'
 # Application initialization.
 app = Flask(__name__)
 app.config.from_object(__name__)
+app.config['DEBUG'] = True
 connect(DB_NAME)
 
 # Constants.
