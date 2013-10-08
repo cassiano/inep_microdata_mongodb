@@ -29,9 +29,9 @@ def json_stats(stats):
 # Schools routes
 ##############################
 
-@app.route("/schools/<school_code>/aggregated_scores/<year>/<enem_knowledge_area>.json")
-def aggregated_scores_by_school(school_code, year, enem_knowledge_area):
-    school = School.find(code=school_code).first()
+@app.route("/schools/<school_id>/aggregated_scores/<year>/<enem_knowledge_area>.json")
+def aggregated_scores_by_school(school_id, year, enem_knowledge_area):
+    school = School.find(id=school_id).first()
     stats  = find_stats(school, year, enem_knowledge_area)
     
     return json_stats(stats)
@@ -40,16 +40,16 @@ def aggregated_scores_by_school(school_code, year, enem_knowledge_area):
 # Cities routes
 ##############################
 
-@app.route("/cities/<city_code>/schools/search.json")
-def search_schools_in_city(city_code):
+@app.route("/cities/<city_id>/schools/search.json")
+def search_schools_in_city(city_id):
     term = request.args.get('term', '')
-    city = City.find(code=city_code).first()
+    city = City.find(id=city_id).first()
     
-    return jsonify({ 'schools': [{ 'id': s.code, 'value': s.name.title() } for s in School.find(city=city, name__icontains=term)] })
+    return jsonify({ 'schools': [{ 'id': str(s.id), 'value': s.name.title() } for s in School.find(city=city, name__icontains=term)] })
 
-@app.route("/cities/<city_code>/aggregated_scores/<year>/<enem_knowledge_area>.json")
-def aggregated_scores_by_city(city_code, year, enem_knowledge_area):
-    city  = City.find(code=city_code).first()
+@app.route("/cities/<city_id>/aggregated_scores/<year>/<enem_knowledge_area>.json")
+def aggregated_scores_by_city(city_id, year, enem_knowledge_area):
+    city  = City.find(id=city_id).first()
     stats = find_stats(city, year, enem_knowledge_area)
     
     return json_stats(stats)
@@ -58,16 +58,16 @@ def aggregated_scores_by_city(city_code, year, enem_knowledge_area):
 # # States routes
 # ##############################
 
-@app.route("/states/<state>/cities/search.json")
-def search_cities_in_state(state):
+@app.route("/states/<state_id>/cities/search.json")
+def search_cities_in_state(state_id):
     term  = request.args.get('term', '')
-    state = State.find(abbreviation=state).first()
+    state = State.find(id=state_id).first()
     
-    return jsonify({ 'cities': [{ 'id': s.code, 'value': s.name.title() } for s in City.find(state=state, name__icontains=term)] })
+    return jsonify({ 'cities': [{ 'id': str(s.id), 'value': s.name.title() } for s in City.find(state=state, name__icontains=term)] })
 
-@app.route("/states/<state>/aggregated_scores/<year>/<enem_knowledge_area>.json")
-def aggregated_scores_by_state(state, year, enem_knowledge_area):
-    state = State.find(abbreviation=state).first()
+@app.route("/states/<state_id>/aggregated_scores/<year>/<enem_knowledge_area>.json")
+def aggregated_scores_by_state(state_id, year, enem_knowledge_area):
+    state = State.find(id=state_id).first()
     stats = find_stats(state, year, enem_knowledge_area)
     
     return json_stats(stats)
