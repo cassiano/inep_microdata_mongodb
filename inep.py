@@ -85,7 +85,7 @@ def aggregated_scores_by_state(state_abbreviation, year, enem_knowledge_area):
 
 @app.route('/')
 def root():
-    states = State.all()
-    years  = [2011]
+    states = State.all().order_by('abbreviation')
+    years  = Year.all().order_by('-value')
     
     return render_template('index.html', states=states, years=years)

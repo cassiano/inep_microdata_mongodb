@@ -22,7 +22,7 @@
     <label for='year'>Ano: </label>
     <select id='year' data-bind='value: year'>
       {% for y in years %}
-        <option value='{{ y }}'>{{ y }}</value>
+        <option value='{{ y.value }}'>{{ y.value }}</value>
       {% endfor %}
     </select>
   </div>
