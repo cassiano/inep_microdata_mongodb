@@ -12,6 +12,9 @@ class DocumentHelpers(object):
     @classmethod
     def all(cls):
         return cls.objects
+
+class Year(Document, DocumentHelpers):
+    value = IntField(min_value=2000, required=True, unique=True)
     
 class ScoreStatistics(EmbeddedDocument):
     # Matrix of score counts per range and per knowledge area (ranges in columns and knowledge areas in rows).
@@ -88,6 +91,10 @@ if __name__ == '__main__':
     @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
     def get_or_create_school(code, defaults):
         return School.objects.get_or_create(code=code, defaults=defaults)[0]
+
+    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
+    def get_or_create_year(value):
+        return Year.objects.get_or_create(value=value)[0]
 
     def load_schools_from_csv_file(schools_csv_file):
         schools = {}
@@ -189,6 +196,8 @@ if __name__ == '__main__':
                 
                     if kwargs != {}:
                         School.find(id=school.id).update_one(**kwargs)
+
+                        get_or_create_year(row['year'])
 
     if len(sys.argv) < 3: 
         raise Exception('Usage: %s <db-name> <data-files>' % sys.argv[0])
