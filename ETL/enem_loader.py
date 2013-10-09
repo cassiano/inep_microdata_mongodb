@@ -118,7 +118,7 @@ if __name__ == '__main__':
         ranges          = { ka: (int(scores[ka] / 100.0001) + 1          if present_in_exam[ka] else None) for i, ka in enumerate(KNOWLEDGE_AREAS) }
 
         city_name = get_string(line, 218, 150)
-        city_name = city_name and city_name.title()
+        city_name = city_name and city_name
 
         return {
             'scores': scores,
