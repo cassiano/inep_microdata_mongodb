@@ -6,7 +6,7 @@ from ETL.enem_loader import *
 from os import environ
 
 # Configuration.
-DB_NAME = 'enem_5_estado_sp'        # 'enem_5'
+DB_NAME = 'enem_5'
 
 # Application initialization.
 app = Flask(__name__)
@@ -21,7 +21,7 @@ def find_stats(object, year, enem_knowledge_area):
     def enem_knowledge_area_index():
         return ENEM_KNOWLEDGE_AREAS.index(enem_knowledge_area.upper())
 
-    return object.stats[year].score_counts[enem_knowledge_area_index()]
+    return object.stats[year].score_counts[enem_knowledge_area_index()] if year in object.stats else [0] * 10
 
 def json_stats(stats):
     return jsonify([[i + 1, count] for i, count in enumerate(stats)])
