@@ -14,14 +14,12 @@ class DocumentHelpers(object):
         return cls.objects
     
 class ScoreStatistics(EmbeddedDocument):
-    EMPTY_LIST = [0] * 10
-    
     # Matrix of score counts per range and per knowledge area (ranges in columns and knowledge areas in rows).
     score_counts = ListField(ListField(IntField(min_value=0, required=True)))
     
     @classmethod
     def create_empty(cls):
-        return cls(score_counts=[cls.EMPTY_LIST for _ in KNOWLEDGE_AREAS])
+        return cls(score_counts=[[0] * 10 for _ in KNOWLEDGE_AREAS])
 
 class School(Document, DocumentHelpers):
     code  = StringField(max_length=8, required=True, unique=True)
@@ -71,10 +69,11 @@ class State(Document, DocumentHelpers):
         return cls.objects.order_by('abbreviation')
 
 if __name__ == '__main__':
-    LINE_SIZE = 1180
-    TOTAL_PRINTS = 40
+    LINE_SIZE        = 1180
+    TOTAL_PRINTS     = 40
+    SCHOOLS_CSV_FILE = '/Users/cassiano/projects/python/inep_microdata/sql/data/escolas_estado_sao_paulo.csv'
 
-    import sys, mongoengine, os
+    import sys, mongoengine, os, csv
     from multiprocessing import Process
     from retry_decorator import Retry
 
@@ -89,6 +88,17 @@ if __name__ == '__main__':
     @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
     def get_or_create_school(code, defaults):
         return School.objects.get_or_create(code=code, defaults=defaults)[0]
+
+    def load_schools_from_csv_file(schools_csv_file):
+        schools = {}
+
+        with open(schools_csv_file, 'rb') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+
+            for row in reader:
+                schools.update({ row[3]: row[4] })
+                
+        return schools
 
     def parse_line(line):
         def get_string(line, start, size, emptyValue = '.'):
@@ -118,7 +128,7 @@ if __name__ == '__main__':
             'state': get_string(line, 368, 2)
         }
 
-    def process_data_file(data_file, process_num):
+    def process_data_file(data_file, process_num, schools):
         print('[% 3d] Processing file %s...' % (process_num, data_file))
 
         file_size = os.path.getsize(data_file)
@@ -152,10 +162,15 @@ if __name__ == '__main__':
                 # School non-existent or distinct from current school?
                 if not school or row['school_code'] != school.code:
                     if row['school_code']:
+                        if row['school_code'] in schools:
+                            name = schools[row['school_code']]
+                        else:
+                            name = 'ESCOLA %s (%s-%s)' % (row['school_code'], row['city']['name'], row['state'])
+                        
                         school = get_or_create_school(
                             row['school_code'],
                             {
-                                'name': 'ESCOLA %s (%s-%s)' % (row['school_code'], row['city']['name'], row['state']), 
+                                'name': name,
                                 'city': city, 
                                 'stats': { str(row['year']): ScoreStatistics.create_empty() }
                             }
@@ -183,6 +198,8 @@ if __name__ == '__main__':
     drop_collections    = last_option_is_true
     data_files          = sys.argv[2:-1] if last_option_is_true else sys.argv[2:]
     
+    schools = load_schools_from_csv_file(SCHOOLS_CSV_FILE)
+    
     connect(db_name)
 
     if drop_collections:
@@ -193,9 +210,9 @@ if __name__ == '__main__':
         State.drop_collection()
 
     children = []
-    
+
     for i in range(len(data_files)):
-        pid = Process(target=process_data_file, args=(data_files[i], i))
+        pid = Process(target=process_data_file, args=(data_files[i], i, schools))
         children.append(pid)
         pid.start()
         
