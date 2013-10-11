@@ -1,3 +1,6 @@
+virtualenv venv --distribute
+pip install -r requirements.txt
+
 mongodump -h localhost -d enem_5 -o ~/tmp/mongo_dumps
 mongorestore --drop -h paulo.mongohq.com:10084 -d app18528733 -u import -p inep2011 ~/tmp/mongo_dumps/enem_5/
 

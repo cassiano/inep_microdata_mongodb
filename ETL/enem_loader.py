@@ -223,6 +223,7 @@ if __name__ == '__main__':
         School.drop_collection()
         City.drop_collection()
         State.drop_collection()
+        Year.drop_collection()
 
     children = []
 

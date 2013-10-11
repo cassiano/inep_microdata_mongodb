@@ -21,7 +21,12 @@ def find_stats(object, year, enem_knowledge_area):
     def enem_knowledge_area_index():
         return ENEM_KNOWLEDGE_AREAS.index(enem_knowledge_area.upper())
 
-    return object.stats[year].score_counts[enem_knowledge_area_index()] if year in object.stats else [0] * 10
+    if year in object.stats:
+        stats = object.stats[year].score_counts[enem_knowledge_area_index()]
+    else:
+        stats = [0] * 10
+        
+    return stats
 
 def json_stats(stats):
     return jsonify([[i + 1, count] for i, count in enumerate(stats)])
