@@ -174,13 +174,23 @@ if __name__ == '__main__':
                         else:
                             name = 'ESCOLA %s (%s-%s)' % (row['school_code'], row['city']['name'], row['state'])
                         
+                        # school = get_or_create_school(row['school_code'], { 
+                        #     'name': name, 
+                        #     'city': city, 
+                        #     'stats': { str(row['year']): ScoreStatistics.create_empty() } 
+                        # })
+
                         school = get_or_create_school(row['school_code'], { 'name': name, 'city': city })
                     else:
                         school = None
         
                 if school:
-                    if str(row['year']) not in school.stats:
-                        School.find(id=school.id).update_one(**{ 'set__stats__%d' % row['year']: ScoreStatistics.create_empty() })
+                    # if str(row['year']) not in school.stats:
+                    #     School.find(id=school.id).update_one(**{ 'set__stats__%d' % row['year']: ScoreStatistics.create_empty() })
+                    
+                    School.find(**{ 'id': school.id, 'stats__%d__exists' % row['year']: False }).update_one(
+                        **{ 'set__stats__%d' % row['year']: ScoreStatistics.create_empty() }
+                    )
                     
                     kwargs = {}
                 

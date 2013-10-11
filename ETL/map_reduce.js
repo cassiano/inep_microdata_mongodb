@@ -1,7 +1,7 @@
 // To update all stats, run: "mongo <dbname> map_reduce.js"
 
 var reduceFunction = function(k, values) { 
-    results = {};
+    var results = {};
 
     for (var i = 0; i < values.length; i++) { 
         for (var year in values[i]) {
