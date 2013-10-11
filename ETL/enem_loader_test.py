@@ -12,12 +12,12 @@ class TestMongoData(unittest.TestCase):
         pass
 
     def test_sao_paulo_city_exists(self):
-        city = City.find(name='Sao Paulo').first()
+        city = City.find(name='SAO PAULO').first()
 
         self.assertIsNotNone(city)
 
     def test_sao_paulo_city_has_correct_stats(self):
-        city = City.find(name='Sao Paulo').first()
+        city = City.find(name='SAO PAULO').first()
 
         self.assertEqual(city.stats['2011'].score_counts, [
             [0, 0, 922, 11784, 25980, 18297, 4895, 694, 31, 0], 

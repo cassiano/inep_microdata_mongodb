@@ -1,20 +1,19 @@
 // To update all stats, run: "mongo <dbname> map_reduce.js"
 
 var reduceFunction = function(k, values) { 
-    var year_results = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],     // Nature Sciences
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],     // Human Sciences
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],     // Languages and Codes
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]      // Math
-    ];
-
     results = {};
 
     for (var i = 0; i < values.length; i++) { 
         for (var year in values[i]) {
-            // Initialize the summarized statistics for the current year, if applicable. Notice
-            // we use Array::slice() in order to clone the "empty" array.
-            results[year] = results[year] || { score_counts: year_results.slice(0) };
+            // Initialize the summarized statistics for the current year, if applicable.
+            results[year] = results[year] || { 
+                score_counts: [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],     // Nature Sciences
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],     // Human Sciences
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],     // Languages and Codes
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]      // Math
+                ]
+            };
 
             for (var j = 0; j < values[i][year].score_counts.length; j++) { 
                 for (var k = 0; k < values[i][year].score_counts[j].length; k++) { 

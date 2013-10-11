@@ -174,18 +174,14 @@ if __name__ == '__main__':
                         else:
                             name = 'ESCOLA %s (%s-%s)' % (row['school_code'], row['city']['name'], row['state'])
                         
-                        school = get_or_create_school(
-                            row['school_code'],
-                            {
-                                'name': name,
-                                'city': city, 
-                                'stats': { str(row['year']): ScoreStatistics.create_empty() }
-                            }
-                        )
+                        school = get_or_create_school(row['school_code'], { 'name': name, 'city': city })
                     else:
                         school = None
         
                 if school:
+                    if str(row['year']) not in school.stats:
+                        School.find(id=school.id).update_one(**{ 'set__stats__%d' % row['year']: ScoreStatistics.create_empty() })
+                    
                     kwargs = {}
                 
                     for i, knowledge_area in enumerate(KNOWLEDGE_AREAS):
@@ -225,10 +221,7 @@ if __name__ == '__main__':
         children.append(pid)
         pid.start()
         
-    print('>>> Waiting for child processes to complete...')
-    
     for i, child in enumerate(children):
         child.join()
-        print('>>> Process %d (%s) joined.' % (i, child.pid))
 
     print('>>> Done!')
