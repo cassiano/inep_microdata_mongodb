@@ -150,18 +150,20 @@ if __name__ == '__main__':
         }
 
     def process_data_file(data_file, process_num, schools):
-        print('[% 3d] Processing file %s...' % (process_num, data_file))
-
         file_size = os.path.getsize(data_file)
-        total_lines = file_size / LINE_SIZE
+        total_lines = float(file_size) / LINE_SIZE
 
         with open(data_file) as f:
             state = city = school = None
 
             for i, line in enumerate(f):
                 if i % (total_lines / TOTAL_PRINTS) == 0: 
-                    print(' ' * process_num * 4 + '[%d] %.1f%%' % \
-                        (process_num, i * 100.0 / total_lines))
+                    progress = i * 100.0 / total_lines
+                    prefix   = '\t' * process_num * 2
+                    
+                    sys.stdout.write(prefix + '[%d] %.1f%%\r' % (process_num + 1, progress))
+                    sys.stdout.flush()
+                    
                 # if i > 10: break
 
                 row = parse_line(line)
@@ -252,4 +254,4 @@ if __name__ == '__main__':
     for i, child in enumerate(children):
         child.join()
 
-    print('>>> Done!')
+    print('\n>>> Done!')
