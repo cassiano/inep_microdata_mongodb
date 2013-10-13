@@ -2,7 +2,7 @@
 
 from mongoengine import *
 
-KNOWLEDGE_AREAS = ['nc', 'hc', 'lc', 'mt']
+KNOWLEDGE_AREAS = ['NC', 'HC', 'LC', 'MT']
 
 class DocumentHelpers(object):
     @classmethod
@@ -10,14 +10,36 @@ class DocumentHelpers(object):
         return cls.objects(**kwargs)
 
     @classmethod
+    def first(cls, **kwargs):
+        return cls.find(**kwargs).first()
+
+    @classmethod
     def all(cls):
         return cls.objects
+
+    @classmethod
+    def atomic_get_or_create(cls, **kwargs):
+        search_args  = kwargs.copy()
+        default_args = search_args.pop('defaults', {})
+        create_args  = search_args.copy()
+        create_args.update(default_args)
+
+        document = cls.first(**search_args)
+        
+        if document:
+            return document, False
+        else:
+            try:
+                return cls.objects.create(**create_args), True
+            except mongoengine.errors.NotUniqueError:
+                return cls.first(**search_args), False
 
 class Year(Document, DocumentHelpers):
     value = IntField(min_value=2000, required=True, unique=True)
     
 class ScoreStatistics(EmbeddedDocument):
-    # Matrix of score counts per range and per knowledge area (ranges in columns and knowledge areas in rows).
+    # Matrix of score counts per range and per knowledge area (ranges in columns and knowledge areas
+    # in rows).
     score_counts = ListField(ListField(IntField(min_value=0, required=True)))
     
     @classmethod
@@ -74,27 +96,10 @@ class State(Document, DocumentHelpers):
 if __name__ == '__main__':
     LINE_SIZE        = 1180
     TOTAL_PRINTS     = 40
-    SCHOOLS_CSV_FILE = '/Users/cassiano/projects/python/inep_microdata/sql/data/escolas_estado_sao_paulo.csv'
+    SCHOOLS_CSV_FILE = '../inep_microdata/sql/data/escolas_estado_sao_paulo.csv'
 
     import sys, mongoengine, os, csv
     from multiprocessing import Process
-    from retry_decorator import Retry
-
-    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
-    def get_or_create_state(abbreviation):
-        return State.objects.get_or_create(abbreviation=abbreviation)[0]
-
-    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
-    def get_or_create_city(code, defaults):
-        return City.objects.get_or_create(code=code, defaults=defaults)[0]
-
-    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
-    def get_or_create_school(code, defaults):
-        return School.objects.get_or_create(code=code, defaults=defaults)[0]
-
-    @Retry(100, delay=0.01, exceptions=(mongoengine.errors.NotUniqueError))
-    def get_or_create_year(value):
-        return Year.objects.get_or_create(value=value)[0]
 
     def load_schools_from_csv_file(schools_csv_file):
         schools = {}
@@ -113,9 +118,18 @@ if __name__ == '__main__':
 
             return value if value != emptyValue else None
 
-        present_in_exam = { ka: (int(get_string(line, 532 + i, 1)) == 1)                                   for i, ka in enumerate(KNOWLEDGE_AREAS) }
-        scores          = { ka: (float(get_string(line, 536 + i * 9, 9)) if present_in_exam[ka] else None) for i, ka in enumerate(KNOWLEDGE_AREAS) }
-        ranges          = { ka: (int(scores[ka] / 100.0001) + 1          if present_in_exam[ka] else None) for i, ka in enumerate(KNOWLEDGE_AREAS) }
+        present_in_exam = { 
+            ka: (int(get_string(line, 532 + i, 1)) == 1)
+            for i, ka in enumerate(KNOWLEDGE_AREAS) 
+        }
+        scores = { 
+            ka: (float(get_string(line, 536 + i * 9, 9)) if present_in_exam[ka] else None) 
+            for i, ka in enumerate(KNOWLEDGE_AREAS) 
+        }
+        ranges = { 
+            ka: (int(scores[ka] / 100.0001) + 1 if present_in_exam[ka] else None) 
+            for i, ka in enumerate(KNOWLEDGE_AREAS) 
+        }
 
         city_name = get_string(line, 218, 150)
         city_name = city_name and city_name
@@ -145,7 +159,9 @@ if __name__ == '__main__':
             state = city = school = None
 
             for i, line in enumerate(f):
-                if i % (total_lines / TOTAL_PRINTS) == 0: print(' ' * process_num * 4 + '[%d] %.1f%%' % (process_num, i * 100.0 / total_lines))
+                if i % (total_lines / TOTAL_PRINTS) == 0: 
+                    print(' ' * process_num * 4 + '[%d] %.1f%%' % \
+                        (process_num, i * 100.0 / total_lines))
                 # if i > 10: break
 
                 row = parse_line(line)
@@ -155,14 +171,17 @@ if __name__ == '__main__':
                 # State non-existent or distinct from current state?
                 if not state or row['state'] != state.abbreviation:
                     if row['state']:
-                        state = get_or_create_state(row['state'])
+                        state, _ = State.atomic_get_or_create(abbreviation=row['state'])
                     else:
                         state = None
 
                 # City non-existent or distinct from current city?
                 if not city or row['city']['code'] != city.code:
                     if row['city']['code']:
-                        city = get_or_create_city(row['city']['code'], { 'name': row['city']['name'], 'state': state })
+                        city, _ = City.atomic_get_or_create(
+                            code=row['city']['code'], 
+                            defaults={ 'name': row['city']['name'], 'state': state }
+                        )
                     else:
                         city = None
 
@@ -172,23 +191,20 @@ if __name__ == '__main__':
                         if row['school_code'] in schools:
                             name = schools[row['school_code']]
                         else:
-                            name = 'ESCOLA %s (%s-%s)' % (row['school_code'], row['city']['name'], row['state'])
+                            name = 'ESCOLA %s (%s-%s)' % \
+                                (row['school_code'], row['city']['name'], row['state'])
                         
-                        # school = get_or_create_school(row['school_code'], { 
-                        #     'name': name, 
-                        #     'city': city, 
-                        #     'stats': { str(row['year']): ScoreStatistics.create_empty() } 
-                        # })
-
-                        school = get_or_create_school(row['school_code'], { 'name': name, 'city': city })
+                        school, _ = School.atomic_get_or_create(
+                            code=row['school_code'], 
+                            defaults={ 'name': name, 'city': city }
+                        )
                     else:
                         school = None
         
                 if school:
-                    # if str(row['year']) not in school.stats:
-                    #     School.find(id=school.id).update_one(**{ 'set__stats__%d' % row['year']: ScoreStatistics.create_empty() })
-                    
-                    School.find(**{ 'id': school.id, 'stats__%d__exists' % row['year']: False }).update_one(
+                    School.find(
+                        **{ 'id': school.id, 'stats__%d__exists' % row['year']: False }
+                    ).update_one(
                         **{ 'set__stats__%d' % row['year']: ScoreStatistics.create_empty() }
                     )
                     
@@ -198,12 +214,13 @@ if __name__ == '__main__':
                         range_value = row['ranges'][knowledge_area]
                     
                         if range_value: 
-                            kwargs.update({ 'inc__stats__%d__score_counts__%d__%d' % (row['year'], i, range_value - 1): 1 })
+                            kwargs.update({ 'inc__stats__%d__score_counts__%d__%d' % \
+                                (row['year'], i, range_value - 1): 1 })
                 
                     if kwargs != {}:
                         School.find(id=school.id).update_one(**kwargs)
 
-                        get_or_create_year(row['year'])
+                        Year.atomic_get_or_create(value=row['year'])
 
     if len(sys.argv) < 3: 
         raise Exception('Usage: %s <db-name> <data-files>' % sys.argv[0])
