@@ -69,7 +69,7 @@ class City(Document, DocumentHelpers):
     }
 
     def schools(self):
-        return School.objects(city=self.id)
+        return School.find(city=self.id)
 
     def full_name(self):
         return self.name + "-" + self.state.abbreviation
@@ -87,7 +87,7 @@ class State(Document, DocumentHelpers):
     }
 
     def cities(self):
-        return City.objects(state=self.id)
+        return City.find(state=self.id)
         
     @classmethod
     def all(cls):
