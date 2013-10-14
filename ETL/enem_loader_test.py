@@ -16,7 +16,7 @@ class TestMongoData(unittest.TestCase):
 
         self.assertIsNotNone(city)
 
-    def test_sao_paulo_city_has_correct_stats(self):
+    def test_sao_paulo_city_has_correct_data(self):
         city = City.find(name='SAO PAULO').first()
 
         self.assertEqual(city.stats['2011'].score_counts, [
@@ -31,7 +31,7 @@ class TestMongoData(unittest.TestCase):
 
         self.assertIsNotNone(state)
 
-    def test_sp_state_has_correct_stats(self):
+    def test_sp_state_has_correct_data(self):
         state = State.find(abbreviation='SP').first()
 
         self.assertEqual(state.stats['2011'].score_counts, [
@@ -46,7 +46,7 @@ class TestMongoData(unittest.TestCase):
 
         self.assertIsNotNone(state)
 
-    def test_rj_state_has_correct_stats(self):
+    def test_rj_state_has_correct_data(self):
         state = State.find(abbreviation='RJ').first()
 
         self.assertEqual(state.stats['2011'].score_counts, [
@@ -61,9 +61,11 @@ class TestMongoData(unittest.TestCase):
 
         self.assertIsNotNone(school)
 
-    def test_dante_alighieri_school_has_correct_stats(self):
+    def test_dante_alighieri_school_has_correct_data(self):
         school = School.find(code='35103524').first()
 
+        self.assertEqual(school.name, "DANTE ALIGHIERI COLEGIO")
+        
         self.assertEqual(school.stats['2011'].score_counts, [
             [0, 0, 0, 2, 3, 47, 71, 9, 0, 0], 
             [0, 0, 0, 0, 2, 65, 63, 2, 0, 0], 
