@@ -1,6 +1,6 @@
 // To update all stats, run: "mongo <dbname> map_reduce.js"
 
-var reduceFunction = function(k, values) { 
+var reduceFunction = function(city_or_state_object_id, values) { 
     var results = {};
 
     for (var i = 0; i < values.length; i++) { 
@@ -32,12 +32,12 @@ db.school.mapReduce(
         emit(this.city, this.stats); 
     }, 
     reduceFunction, 
-    { out: 'city_aggregates' }
+    { out: 'city_aggregates_temp' }
 );
 
 // Update cities in db.city collection with calculated stats.
 db.city.find().forEach(function(city) { 
-    var city_aggregate = db.city_aggregates.find(city._id).next(); 
+    var city_aggregate = db.city_aggregates_temp.find(city._id).next(); 
     
     db.city.update(
         { _id: city._id }, 
@@ -55,12 +55,12 @@ db.city.mapReduce(
         emit(this.state, this.stats); 
     },
     reduceFunction, 
-    { out: 'state_aggregates' }
+    { out: 'state_aggregates_temp' }
 );
 
 // Update states in db.state collection with calculated stats.
 db.state.find().forEach(function(state) { 
-    var state_aggregate = db.state_aggregates.find(state._id).next(); 
+    var state_aggregate = db.state_aggregates_temp.find(state._id).next(); 
     
     db.state.update(
         { _id: state._id }, 
@@ -73,5 +73,5 @@ db.state.find().forEach(function(state) {
 });
 
 // Drop the temporary collections.
-db.city_aggregates.drop();
-db.state_aggregates.drop();
+db.city_aggregates_temp.drop();
+db.state_aggregates_temp.drop();
