@@ -151,14 +151,14 @@ if __name__ == '__main__':
 
     def process_data_file(data_file, process_num, schools):
         file_size = os.path.getsize(data_file)
-        total_lines = float(file_size) / LINE_SIZE
-
+        total_lines = file_size / LINE_SIZE
+        
         with open(data_file) as f:
             state = city = school = None
 
             for i, line in enumerate(f):
-                if i % (total_lines / TOTAL_PRINTS) == 0: 
-                    progress = i * 100.0 / total_lines
+                if i % (total_lines / TOTAL_PRINTS) == 0 or i == total_lines - 1: 
+                    progress = i * 100.0 / (total_lines - 1)
                     prefix   = '\t' * process_num * 2
                     
                     sys.stdout.write(prefix + '[%d] %.1f%%\r' % (process_num + 1, progress))
