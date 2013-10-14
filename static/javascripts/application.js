@@ -147,13 +147,13 @@
             }
         };
 
-        // Store the currently selected Enem subject, year and state.
-        self.enemSubject = ko.observable();
-        self.year        = ko.observable();
-        self.state       = ko.observable();
+        // Store the currently selected Enem knowledge area, year and state.
+        self.enemKnowledgeArea = ko.observable();
+        self.year              = ko.observable();
+        self.state             = ko.observable();
 
-        // List of available Enem subjects (used to populated the Enem subject's pulldown).
-        self.enemSubjects = [
+        // List of available Enem knowledge areas (used to populated the Enem knowledge area's pulldown).
+        self.enemKnowledgeAreas = [
             { value: 'NAT', name: 'Ciências da Natureza' },
             { value: 'HUM', name: 'Ciências Humanas' },
             { value: 'LAN', name: 'Linguagens e Códigos' },
@@ -224,8 +224,8 @@
             },
 
             title: ko.computed(function () { 
-                if (self.enemSubject()) {
-                    return { text: 'Histograma - ' + self.enemSubject().name + ' - ' + self.year() };
+                if (self.enemKnowledgeArea()) {
+                    return { text: 'Histograma - ' + self.enemKnowledgeArea().name + ' - ' + self.year() };
                 }
             }),
 
@@ -249,7 +249,7 @@
             }
         
             cachedGetJSON(
-                '/schools/' + self.autocomplete.data.school.id() + '/aggregated_scores/' + self.year() + '/' + self.enemSubject().value + '.json', 
+                '/schools/' + self.autocomplete.data.school.id() + '/aggregated_scores/' + self.year() + '/' + self.enemKnowledgeArea().value + '.json', 
                 self.chart.data.series.school       // Update the observable when the Ajax call has completed.
             );
         });
@@ -268,7 +268,7 @@
             }
 
             cachedGetJSON(
-                '/cities/' + self.autocomplete.data.city.id() + '/aggregated_scores/' + self.year() + '/' + self.enemSubject().value + '.json', 
+                '/cities/' + self.autocomplete.data.city.id() + '/aggregated_scores/' + self.year() + '/' + self.enemKnowledgeArea().value + '.json', 
                 self.chart.data.series.city     // Update the observable when the Ajax call has completed.
             );
         });
