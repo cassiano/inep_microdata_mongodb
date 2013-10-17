@@ -96,7 +96,7 @@ class State(Document, DocumentHelpers):
 if __name__ == '__main__':
     LINE_SIZE        = 1180
     TOTAL_PRINTS     = 40
-    SCHOOLS_CSV_FILE = '../inep_microdata/sql/data/escolas_estado_sao_paulo.csv'
+    SCHOOLS_CSV_FILE = '../inep_microdata/ETL/data/escolas_estado_sao_paulo.csv'
 
     import sys, mongoengine, os, csv
     from multiprocessing import Process
