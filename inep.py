@@ -37,7 +37,7 @@ def json_stats(stats):
 
 @app.route("/schools/<school_id>/aggregated_scores/<year>/<enem_knowledge_area>.json")
 def aggregated_scores_by_school(school_id, year, enem_knowledge_area):
-    school = School.find(id=school_id).first()
+    school = School.first(id=school_id)
     stats  = find_stats(school, year, enem_knowledge_area)
     
     return json_stats(stats)
@@ -49,7 +49,7 @@ def aggregated_scores_by_school(school_id, year, enem_knowledge_area):
 @app.route("/cities/<city_id>/schools/search.json")
 def search_schools_in_city(city_id):
     term = request.args.get('term', '')
-    city = City.find(id=city_id).first()
+    city = City.first(id=city_id)
     
     return jsonify({ 
         'schools': [{ 'id': str(s.id), 'value': s.name.title() } 
@@ -58,7 +58,7 @@ def search_schools_in_city(city_id):
 
 @app.route("/cities/<city_id>/aggregated_scores/<year>/<enem_knowledge_area>.json")
 def aggregated_scores_by_city(city_id, year, enem_knowledge_area):
-    city  = City.find(id=city_id).first()
+    city  = City.first(id=city_id)
     stats = find_stats(city, year, enem_knowledge_area)
     
     return json_stats(stats)
@@ -70,7 +70,7 @@ def aggregated_scores_by_city(city_id, year, enem_knowledge_area):
 @app.route("/states/<state_abbreviation>/cities/search.json")
 def search_cities_in_state(state_abbreviation):
     term  = request.args.get('term', '')
-    state = State.find(abbreviation=state_abbreviation).first()
+    state = State.first(abbreviation=state_abbreviation)
     
     return jsonify({ 
         'cities': [{ 'id': str(s.id), 'value': s.name.title() } 
@@ -79,7 +79,7 @@ def search_cities_in_state(state_abbreviation):
 
 @app.route("/states/<state_abbreviation>/aggregated_scores/<year>/<enem_knowledge_area>.json")
 def aggregated_scores_by_state(state_abbreviation, year, enem_knowledge_area):
-    state = State.find(abbreviation=state_abbreviation).first()
+    state = State.first(abbreviation=state_abbreviation)
     stats = find_stats(state, year, enem_knowledge_area)
     
     return json_stats(stats)
