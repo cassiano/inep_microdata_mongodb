@@ -131,9 +131,6 @@ if __name__ == '__main__':
             for i, ka in enumerate(KNOWLEDGE_AREAS) 
         }
 
-        city_name = get_string(line, 218, 150)
-        city_name = city_name and city_name
-
         return {
             'scores': scores,
             'ranges': ranges,
@@ -144,7 +141,7 @@ if __name__ == '__main__':
             'school_code': get_string(line, 203, 8),
             'city': {
                 'code': get_string(line, 211, 7),
-                'name': city_name
+                'name': get_string(line, 218, 150)
             },
             'state': get_string(line, 368, 2)
         }
