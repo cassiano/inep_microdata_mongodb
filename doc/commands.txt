@@ -10,6 +10,3 @@ time python ETL/enem_loader.py enem_5_estado_sp ETL/data/estado/5/* true
 time mongo enem_5_estado_sp ETL/map_reduce.js 
 
 git push heroku master
-
-git branch --set-upstream master heroku/master
-git push heroku
