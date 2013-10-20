@@ -27,20 +27,18 @@ var reduceFunction = function(city_or_state_object_id, values) {
 };
 
 // Calculate stats for cities.
-db.school.mapReduce(
+var city_aggregates = db.school.mapReduce(
     function() { 
         emit(this.city, this.stats); 
     }, 
     reduceFunction, 
-    { out: 'city_aggregates_temp' }
+    { out: { inline: 1 } }
 );
 
 // Update cities in db.city collection with calculated stats.
-db.city.find().forEach(function(city) { 
-    var city_aggregate = db.city_aggregates_temp.find(city._id).next(); 
-    
+city_aggregates.results.forEach(function(city_aggregate) { 
     db.city.update(
-        { _id: city._id }, 
+        { _id: city_aggregate._id }, 
         { 
             $set: { 
                 stats: city_aggregate.value
@@ -50,20 +48,18 @@ db.city.find().forEach(function(city) {
 });
 
 // Calculate stats for states.
-db.city.mapReduce(
+var state_aggregates = db.city.mapReduce(
     function() { 
         emit(this.state, this.stats); 
     },
     reduceFunction, 
-    { out: 'state_aggregates_temp' }
+    { out: { inline: 1 } }
 );
 
 // Update states in db.state collection with calculated stats.
-db.state.find().forEach(function(state) { 
-    var state_aggregate = db.state_aggregates_temp.find(state._id).next(); 
-    
+state_aggregates.results.forEach(function(state_aggregate) { 
     db.state.update(
-        { _id: state._id }, 
+        { _id: state_aggregate._id }, 
         { 
             $set: { 
                 stats: state_aggregate.value
@@ -71,7 +67,3 @@ db.state.find().forEach(function(state) {
         }
     ); 
 });
-
-// Drop the temporary collections.
-db.city_aggregates_temp.drop();
-db.state_aggregates_temp.drop();

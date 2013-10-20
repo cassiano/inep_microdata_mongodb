@@ -2,7 +2,7 @@
 
 from mongoengine import *
 
-KNOWLEDGE_AREAS = ['NC', 'HC', 'LC', 'MT']
+KNOWLEDGE_AREAS = ['NAT', 'HUM', 'LAN', 'MAT']
 
 class DocumentHelpers(object):
     @classmethod
@@ -74,9 +74,9 @@ class City(Document, DocumentHelpers):
     def full_name(self):
         return self.name + "-" + self.state.abbreviation
 
-    @classmethod
-    def all(cls):
-        return cls.objects.order_by('name')
+    # @classmethod
+    # def all(cls):
+    #     return cls.objects.order_by('name')
         
 class State(Document, DocumentHelpers):
     abbreviation = StringField(max_length=2, required=True, unique=True)
