@@ -12,17 +12,17 @@ def parse_line(line):
 
         return value if value != emptyValue else None
 
-    present_in_exam = { 
+    present_in_exam = {
         ka: (int(get_string(line, 532 + i, 1)) == 1)
-        for i, ka in enumerate(KNOWLEDGE_AREAS) 
+        for i, ka in enumerate(KNOWLEDGE_AREAS)
     }
-    scores = { 
-        ka: (float(get_string(line, 536 + i * 9, 9)) if present_in_exam[ka] else None) 
-        for i, ka in enumerate(KNOWLEDGE_AREAS) 
+    scores = {
+        ka: (float(get_string(line, 536 + i * 9, 9)) if present_in_exam[ka] else None)
+        for i, ka in enumerate(KNOWLEDGE_AREAS)
     }
-    ranges = { 
-        ka: (int(scores[ka] / 100.0001) + 1 if present_in_exam[ka] else None) 
-        for i, ka in enumerate(KNOWLEDGE_AREAS) 
+    ranges = {
+        ka: (int(scores[ka] / 100.0001) + 1 if present_in_exam[ka] else None)
+        for i, ka in enumerate(KNOWLEDGE_AREAS)
     }
 
     return {
@@ -41,25 +41,26 @@ def parse_line(line):
     }
 
 if __name__ == '__main__':
-    LINE_SIZE    = 1180
-    TOTAL_PRINTS = 100
+    LINE_SIZE        = 1180
+    TOTAL_PRINTS     = 100
+    OUTPUT_JSON_FILE = "/Users/cassiano/tmp/inep_data.json"
 
     if len(sys.argv) < 2:
         raise Exception('Usage: %s <data-file>' % sys.argv[0])
-    
+
     data_file = sys.argv[1]
 
     file_size = os.path.getsize(data_file)
     total_lines = file_size / LINE_SIZE
 
-    with open("/Users/cassiano/tmp/inep_data.json", "w") as outfile:
+    with open(OUTPUT_JSON_FILE, "w") as outfile:
         with open(data_file) as infile:
             for i, line in enumerate(infile):
-                if i % (total_lines / TOTAL_PRINTS) == 0 or i == total_lines - 1: 
+                if i % (total_lines / TOTAL_PRINTS) == 0 or i == total_lines - 1:
                     progress = i * 100.0 / (total_lines - 1)
-                
+
                     print('%.1f%%' % progress)
-                
+
                 # if i > 10: break
 
                 row = parse_line(line)
