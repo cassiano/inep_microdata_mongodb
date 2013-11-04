@@ -7,10 +7,10 @@ import sys, json, os
 KNOWLEDGE_AREAS = ['NAT', 'HUM', 'LAN', 'MAT']
 
 def parse_line(line):
-    def get_string(line, start, size, emptyValue = '.'):
+    def get_string(line, start, size, empty_value = '.'):
         value = line[start: start + size].strip()
 
-        return value if value != emptyValue else None
+        return value if value != empty_value else None
 
     present_in_exam = {
         ka: (int(get_string(line, 532 + i, 1)) == 1)
@@ -40,7 +40,15 @@ def parse_line(line):
         'state': get_string(line, 368, 2)
     }
 
+def subscriptions(data_file):
+    with open(data_file) as infile:
+        for i, line in enumerate(infile):
+            yield i, parse_line(line)
+
 if __name__ == '__main__':
+    def display_progress(current_index, total_lines):
+        return current_index % (total_lines / TOTAL_PRINTS) == 0 or current_index == total_lines - 1
+
     LINE_SIZE        = 1180
     TOTAL_PRINTS     = 100
     OUTPUT_JSON_FILE = "/Users/cassiano/tmp/inep_data.json"
@@ -54,15 +62,11 @@ if __name__ == '__main__':
     total_lines = file_size / LINE_SIZE
 
     with open(OUTPUT_JSON_FILE, "w") as outfile:
-        with open(data_file) as infile:
-            for i, line in enumerate(infile):
-                if i % (total_lines / TOTAL_PRINTS) == 0 or i == total_lines - 1:
-                    progress = i * 100.0 / (total_lines - 1)
+        for i, subscription in subscriptions(data_file):
+            if display_progress(i, total_lines):
+                progress = i * 100.0 / (total_lines - 1)
+                print('%.1f%%' % progress)
 
-                    print('%.1f%%' % progress)
+            # if i > 10: break
 
-                # if i > 10: break
-
-                row = parse_line(line)
-
-                outfile.write(json.dumps(row) + '\n')
+            outfile.write(json.dumps(subscription) + '\n')
